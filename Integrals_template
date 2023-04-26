@@ -81,7 +81,7 @@ double quad_trap(Func1vFp func, double a, double b, int n) {
     double pieces = (b-a)/n;
     double result = 0;
     for (int i = 0; i < n; ++i) {
-        result = result + (((b-i*pieces)-(b-i*pieces-pieces))/2) * (func(b-i*pieces-pieces) * func(b-i*pieces));
+        result = result + (((b-i*pieces)-(b-i*pieces-pieces))/2) * (func(b-i*pieces-pieces) + func(b-i*pieces));
     }
     return result;
 }

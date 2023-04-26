@@ -43,7 +43,7 @@ double quad_rect_left(Func1vFp f1, double a, double b, int n) {
     double pieces = (b-a)/n;
     double result = 0;
     for (int i = 0; i < n; ++i) {
-        result = result + ((b-i*pieces)-pieces) * f1(pieces);
+        result = result + ((b-i*pieces)-(b-i*pieces-pieces)) * f1((b-i*pieces-pieces));
     }
     return result;
 }
@@ -53,22 +53,41 @@ double quad_rect_right(Func1vFp f1, double a, double b, int n) {
     double pieces = (b-a)/n;
     double result = 0;
     for (int i = 0; i < n; ++i) {
-        result = result + ((b-i*pieces)-pieces) * f1(b-i*pieces);
+        result = result + ((b-i*pieces)-(b-i*pieces-pieces)) * f1(b-i*pieces);
     }
     return result;
 }
 
 // rectangle rule, midpoint
 double quad_rect_mid(Func1vFp f1, double a, double b, int n) {
-	return h * sum;
+    double pieces = (b-a)/n;
+    double result = 0;
+    for (int i = 0; i < n; ++i) {
+        double midpoint = ((b-i*pieces)+(b-i*pieces-pieces))/2;
+        result = result + ((b-i*pieces)-(b-i*pieces-pieces)) * f1(midpoint);
+    }
+    return result;
 }
 
 // trapezoidal rule
 double quad_trap(Func1vFp func, double a, double b, int n) {
+    double pieces = (b-a)/n;
+    double result = 0;
+    for (int i = 0; i < n; ++i) {
+        result = result + (((b-i*pieces)-(b-i*pieces-pieces))/2) * (func(b-i*pieces-pieces) * func(b-i*pieces));
+    }
+    return result;
 }
 
 // Simpson's rule
 double quad_simpson(Func1vFp f, double a, double b, int n) {
+    double pieces = (b-a)/n;
+    double result = 0;
+    for (int i = 0; i < n; ++i) {
+        double midpoint = ((b-i*pieces)+(b-i*pieces-pieces))/2;
+        result = result + (((b-i*pieces)-(b-i*pieces-pieces))/6) * (f(b-i*pieces-pieces) + 4 * f(midpoint) + f(b-i*pieces));
+    }
+    return result;
 }
 
 // pointer to quadrature function

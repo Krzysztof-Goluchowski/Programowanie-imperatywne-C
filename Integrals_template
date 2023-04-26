@@ -91,7 +91,7 @@ double quad_simpson(Func1vFp f, double a, double b, int n) {
 }
 
 // pointer to quadrature function
-typedef ... QuadratureFp ...;
+typedef double (*QuadratureFp)(Func1vFp, double a, double b, int n);
 
 // array of pointers to integrand functions
 Func1vFp func_tab[] = { f_poly, f_rat, f_trig, f_exp };

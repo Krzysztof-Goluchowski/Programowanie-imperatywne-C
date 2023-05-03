@@ -116,11 +116,27 @@ double quad_select(int fun_no, int quad_no, double a, double b, int n) {
 
 // adaptive algorithm
 double recurs(Func1vFp f, double a, double b, double S, double delta, QuadratureFp quad, int level) {
+    if  (RECURS_LEVEL_MAX == level){
+        return NAN;
+    }
+    double c = (a+b)/2;
+    double S1 = quad(f, a, c, 1);
+    double S2 = quad(f, c, b, 1);
+    double roznica = fabs(S1+S2-S);
+    if (roznica <= delta){
+        return S1+S2;
+    }
+    double result = recurs(f, a, c, S1, delta/2, quad, level+1)+recurs(f, c, b, S2, delta/2, quad, level+1);
+
+    return result;
 
 }
 
 // initialization for adaptive algorithm
 double init_recurs(Func1vFp f, double a, double b, double delta, QuadratureFp quad) {
+    double S = quad(f, a, b, 1);
+    double result = recurs(f, a, b, S, delta, quad, 0);
+    return result;
 }
 
 // double integrals
@@ -139,8 +155,24 @@ double upper_bound2(double x) {
     return sin(10*x);
 }
 
+
 // rectangle rule (leftpoint) - double integral over rectangular domain
 double dbl_integr(Func2vFp f, double x1, double x2, int nx, double y1, double y2, int ny) {
+    double interval_x = (x2 - x1) / nx;
+    double interval_y = (y2 - y1) / ny;
+    double result = 0;
+    double curr_x = x1;
+    double curr_y = y1;
+
+    for (int i = 0; i < nx; i++){
+        for (int j = 0; j < ny; j++) {
+            result += f(curr_x, curr_y) * interval_x * interval_y;
+            curr_y += interval_y;
+        }
+        curr_y = y1;
+        curr_x += interval_x;
+    }
+    return result;
 }
 
 // rectangle rule (midpoint) - double integral over normal domain with respect to the x-axis
@@ -152,6 +184,26 @@ double dbl_integr_normal_1(Func2vFp f, double x1, double x2, int nx, double hy,
 // domains with respect to the x-axis
 double dbl_integr_normal_n(Func2vFp f, double x1, double x2, int nx, double y1, double y2,
                            int ny, Func1vFp fg, Func1vFp fh)  {
+    double hx = (x2 - x1) / nx, hy = (y2 - y1) / ny, sum = 0, xi, gi, hi, yi;
+
+    xi = x1;
+    for(int i = 0; i < nx; i++) {
+        gi = fg(xi);
+        hi = fh(xi);
+        double upBound = fmin(y2, hi);
+        double downBound = fmax(y1, gi);
+
+        int currNy = ceil((upBound - downBound) / hy);
+        double currHy = (upBound - downBound) / currNy;
+
+        yi = fmax(y1, gi);
+        for (int j = 0; j < currNy; j++) {
+            sum += currHy * f(xi, yi);
+            yi += currHy;
+        }
+        xi += hx;
+    }
+    return hx * sum;
 }
 
 // multiple quadratures

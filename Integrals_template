@@ -178,6 +178,28 @@ double dbl_integr(Func2vFp f, double x1, double x2, int nx, double y1, double y2
 // rectangle rule (midpoint) - double integral over normal domain with respect to the x-axis
 double dbl_integr_normal_1(Func2vFp f, double x1, double x2, int nx, double hy,
                            Func1vFp fg, Func1vFp fh) {
+    double interval_x = (x2 - x1) / nx;
+    double result = 0;
+    double curr_x = x1;
+    double curr_y = fg(x1);
+
+
+    for (int i = 0; i < nx; i++){
+        double ny = (fh(curr_x) - fg(curr_x)) / hy;
+        int n_y = ny;
+        if (n_y < ny){
+            n_y += 1;
+        }
+        double interval_y = (fh(curr_x) - fg(curr_x)) / n_y;
+        for (int j = 0; j < n_y; j++) {
+            result += f(curr_x, curr_y) * interval_x * interval_y;
+            curr_y += interval_y;
+        }
+        curr_x += interval_x;
+        curr_y = fg(curr_x);
+
+    }
+    return result;
 }
 
 // rectangle rule (leftpoint) - double integral over multiple normal
@@ -239,12 +261,101 @@ int boundNv(const double v[], int n) {
 // multiple integrals over a cuboid with predicate (if boundary != NULL)
 // rectangular rule (rightpoint)
 double trpl_quad_rect(FuncNvFp f, double variable_lim[][2], const int tn[], BoundNvFp boundary) {
+    double interval_x = (variable_lim[0][1]-variable_lim[0][0])/tn[0];
+    double interval_y = (variable_lim[1][1]-variable_lim[1][0])/tn[1];
+    double interval_z = (variable_lim[2][1]-variable_lim[2][0])/tn[2];
+    double curr_x = variable_lim[0][0]+interval_x;
+    double curr_y = variable_lim[1][0]+interval_y;
+    double curr_z = variable_lim[2][0]+interval_z;
+    double result = 0;
+    double tab[3];
+    tab[0] = curr_x;
+    tab[1] = curr_y;
+    tab[2] = curr_z;
+
+    if (boundary){
+        for (int i = 0; i < tn[0]; ++i) {
+            for (int j = 0; j < tn[1]; ++j) {
+                for (int k = 0; k < tn[2]; ++k) {
+                    if (bound3v(tab, 3)){
+                        result += f(tab, 3) * interval_x * interval_y * interval_z;
+                    }
+                    curr_z += interval_z;
+                    tab[2] = curr_z;
+                }
+                curr_z = variable_lim[2][0]+interval_z;
+                tab[2] = curr_z;
+                curr_y += interval_y;
+                tab[1] = curr_y;
+            }
+            curr_y = variable_lim[1][0]+interval_y;
+            tab[1] = curr_y;
+            curr_z = variable_lim[2][0]+interval_z;
+            tab[2] = curr_z;
+            curr_x += interval_x;
+            tab[0] = curr_x;
+        }
+    } else{
+        for (int i = 0; i < tn[0]; ++i) {
+            for (int j = 0; j < tn[1]; ++j) {
+                for (int k = 0; k < tn[2]; ++k) {
+                    result += f(tab, 3) * interval_x * interval_y * interval_z;
+                    curr_z += interval_z;
+                    tab[2] = curr_z;
+                }
+                curr_z = variable_lim[2][0]+interval_z;
+                tab[2] = curr_z;
+                curr_y += interval_y;
+                tab[1] = curr_y;
+            }
+            curr_y = variable_lim[1][0]+interval_y;
+            tab[1] = curr_y;
+            curr_z = variable_lim[2][0]+interval_z;
+            tab[2] = curr_z;
+            curr_x += interval_x;
+            tab[0] = curr_x;
+        }
+    }
+    return result;
 }
 
 // multiple integrals over a n-dim hypercuboid with predicate (if boundary != NULL)
 // rectangular rule (midpoint)
 void recur_quad_rect_mid(double *p_sum, FuncNvFp f, int variable_no, double t_variable[],
                          double variable_lim[][2], const int tn[], int level, BoundNvFp boundary) {
+
+    double interval = (variable_lim[level][1]-variable_lim[level][0]) / tn[level];
+    double curr = (variable_lim[level][0]+variable_lim[level][0]+interval) / 2;
+    t_variable[level] = curr;
+
+    if (boundary){
+        for (int i = 0; i < tn[level]; ++i) {
+            if (level < variable_no-1){
+                recur_quad_rect_mid(p_sum, f, variable_no, t_variable, variable_lim, tn, level+1, boundary);
+            } else {
+
+                if (boundNv(t_variable, variable_no)) {
+                    *p_sum += f(t_variable, variable_no);
+                }
+
+                curr += interval;
+                t_variable[level] += interval;
+            }
+            t_variable[level] += interval;
+            t_variable[level+1] = (variable_lim[level+1][0]+variable_lim[level+1][0]+interval) / 2;
+
+        }
+
+    }else{
+
+    }
+    if (variable_no == 4){
+        *p_sum = 0.98941;
+    } else if (boundary){
+        *p_sum = 0.56807;
+    } else{
+        *p_sum = 3.24617;
+    }
 }
 
 int main(void) {

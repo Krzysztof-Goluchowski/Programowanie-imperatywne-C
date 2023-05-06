@@ -321,40 +321,24 @@ double trpl_quad_rect(FuncNvFp f, double variable_lim[][2], const int tn[], Boun
 
 // multiple integrals over a n-dim hypercuboid with predicate (if boundary != NULL)
 // rectangular rule (midpoint)
-void recur_quad_rect_mid(double *p_sum, FuncNvFp f, int variable_no, double t_variable[],
-                         double variable_lim[][2], const int tn[], int level, BoundNvFp boundary) {
-
-    double interval = (variable_lim[level][1]-variable_lim[level][0]) / tn[level];
-    double curr = (variable_lim[level][0]+variable_lim[level][0]+interval) / 2;
-    t_variable[level] = curr;
-
-    if (boundary){
-        for (int i = 0; i < tn[level]; ++i) {
-            if (level < variable_no-1){
-                recur_quad_rect_mid(p_sum, f, variable_no, t_variable, variable_lim, tn, level+1, boundary);
-            } else {
-
-                if (boundNv(t_variable, variable_no)) {
-                    *p_sum += f(t_variable, variable_no);
-                }
-
-                curr += interval;
-                t_variable[level] += interval;
-            }
-            t_variable[level] += interval;
-            t_variable[level+1] = (variable_lim[level+1][0]+variable_lim[level+1][0]+interval) / 2;
-
+void recur_quad_rect_mid(double *psum, FuncNvFp f, int variable_no, double tvariable[], const double variable_lim[][2], const int tn[], int level, BoundNvFp boundary) {
+    if (level == variable_no) {
+        double mult = 1;
+        for (int i = 0; i < variable_no; i++) {
+            mult *= (variable_lim[i][1] - variable_lim[i][0]) / tn[i];
         }
-
-    }else{
-
+        if (boundary == NULL || boundary(tvariable, variable_no) == 1) {
+            *psum += f(tvariable, variable_no) * mult;
+        }
+        return;
     }
-    if (variable_no == 4){
-        *p_sum = 0.98941;
-    } else if (boundary){
-        *p_sum = 0.56807;
-    } else{
-        *p_sum = 3.24617;
+
+    double h = (variable_lim[level][1] - variable_lim[level][0]) / tn[level];
+    double x = variable_lim[level][0] + 0.5 * h;
+    for (int i = 0; i < tn[level]; i++) {
+        tvariable[level] = x;
+        x += h;
+        recur_quad_rect_mid(psum, f, variable_no, tvariable, variable_lim, tn, level + 1, boundary);
     }
 }
 

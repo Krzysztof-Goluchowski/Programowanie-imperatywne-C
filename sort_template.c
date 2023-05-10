@@ -37,12 +37,31 @@ int cmp_date(const void *d1, const void *d2){
 
 // compare foods
 int cmp(const void *a, const void *b) {
+    const Food* food1 = (const Food*)a;
+    const Food* food2 = (const Food*)b;
 
+    Date data1 = food1->valid_date;
+    Date data2 = food2->valid_date;
+
+    int roznica_dni = cmp_date(&data1, &data2);
+    if (roznica_dni > 0){
+        return 1;
+    } else if (roznica_dni < 0){
+        return -1;
+    }
+
+    if (food1->price < food2->price) {
+        return -1;
+    } else if (food1->price > food2->price) {
+        return 1;
+    }
+
+    return strcmp(food1->name, food2->name);
 }
 
 // bsearch returning address where to insert new element
 void *bsearch2 (const void *key, const void *base, size_t nmemb, size_t size, ComparFp compar, char *result) {
-
+    
 }
 
 // print goods of given name

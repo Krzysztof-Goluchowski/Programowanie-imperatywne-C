@@ -3,6 +3,7 @@
 #include <string.h>
 #include <time.h>
 
+
 typedef struct {
     int day;
     int month;
@@ -69,36 +70,61 @@ int cmp(const void *a, const void *b) {
 }
 
 // bsearch returning address where to insert new element
-void *bsearch2 (const void *key, const void *base, size_t nmemb, size_t size, ComparFp compar, char *result) {
-    void *baza = base;
-    for (int i = 0; i < nmemb; ++i) {
-        int compare = compar(&key, &base[i]);
-        if (compare == 0){
+void *bsearch2(const void *key, void *base, size_t nitems, size_t size, ComparFp compar, int *result) {
+    const char *p, *q;
+    int cmp;
+    int l = 0;
+    int r = nitems - 1;
+    while (l <= r) {
+        int m = (l + r) / 2;
+        p = (const char *) base + m * size;
+        cmp = compar(key, p);
+        if (cmp == 0) {
             *result = 1;
-            return &baza[i];
-        } else if (compare == -1 || compare == -2 || compare == -3){
-            *result = 0;
-            return &baza[i];
-        } else if (compare == 2 || compare == 3 || compare == 1){
-            continue;
+            return (void *) p;
+        } else if (cmp < 0) {
+            r = m - 1;
+            q = p;
+        } else {
+            l = m + 1;
+            q = p + size;
         }
-
     }
+
+    *result = 0;
+    return (void*) q;
 }
 
 // print goods of given name
-void print_art(Food *p, int n, char *art) {
+void print_art(Food *p, int n, const char *art) {
     for (size_t i = 0; i < n; ++i) {
-        if (p[i].name == art){
-            printf("%f %d %d.%d.%d", p[i].price, p[i].amount, p[i].valid_date.day, p[i].valid_date.month, p[i].valid_date.year);
+        char* a = p[i].name;
+        if (strcmp(p[i].name, art) == 0) {
+            if (p[i].valid_date.day < 10 && p[i].valid_date.month < 10) {
+                printf("%.2f %d 0%d.0%d.%d\n", p[i].price, p[i].amount, p[i].valid_date.day, p[i].valid_date.month, p[i].valid_date.year);
+
+            } else if (p[i].valid_date.month < 10) {
+                printf("%.2f %d %d.0%d.%d\n", p[i].price, p[i].amount, p[i].valid_date.day, p[i].valid_date.month, p[i].valid_date.year);
+
+            } else if (p[i].valid_date.day < 10) {
+                printf("%.2f %d 0%d.%d.%d\n", p[i].price, p[i].amount, p[i].valid_date.day, p[i].valid_date.month, p[i].valid_date.year);
+            } else {
+                printf("%.2f %d %d.%d.%d\n", p[i].price, p[i].amount, p[i].valid_date.day, p[i].valid_date.month, p[i].valid_date.year);
+            }
         }
     }
 }
 
 // add record to table if absent
 Food* add_record(Food *tab, int *np, ComparFp compar, Food *new) {
-    char found;
-    Food *food = bsearch2(&new, tab, *np, sizeof(Food), compar, &found);
+    int a = *np;
+    if (a == 0){
+        tab[0] = *new;
+        (*np)++;
+        return new;
+    }
+    int found = 0;
+    Food *food = bsearch2(new, tab, *np, sizeof(Food), compar, &found);
     if (found){
         food->amount += new->amount;
     } else {
@@ -116,14 +142,17 @@ Food* add_record(Food *tab, int *np, ComparFp compar, Food *new) {
 // calls add_record if sorted = 1 and just adds element if sorted = 0
 int read_goods(Food *tab, int no, FILE *stream, int sorted) {
     Food new;
+    int start = 0;
     for (int i = 0; i < no; ++i) {
         fscanf(stream, "%20s %f %d %d.%d.%d", new.name, &new.price, &new.amount, &new.valid_date.day, &new.valid_date.month, &new.valid_date.year);
         if (sorted == 1){
-            add_record(tab, &i+1, cmp, &new);
+            add_record(tab, &start, cmp, &new);
         } else{
             tab[i] = new;
+            start += 1;
         }
     }
+    return start;
 }
 
 int cmp_qs(const void *a, const void *b) {
@@ -137,8 +166,51 @@ int cmp_bs(const void *a, const void *b) {
     return cmp_date(pd, &fb->valid_date);
 }
 
+int is_leap(int y) {
+    return ((y % 4 == 0 && y % 100 != 0) || y % 400 == 0);
+}
+
 // finds the value of goods due on 'curr_date'
 float value(Food *food_tab, size_t n, Date curr_date, int days) {
+    //qsort(food_tab, n, sizeof(Food), cmp_qs);
+
+    Date szukana_data;
+    szukana_data.year = curr_date.year;
+    int rok = szukana_data.year;
+    szukana_data.month = curr_date.month;
+    int month = szukana_data.month;
+    szukana_data.day = curr_date.day;
+    int dzien = 07;
+    int a = dzien;
+
+    static int days_in_month[] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+
+    for (int i = 0; i < days; ++i) {
+        szukana_data.day += 1;
+        if (szukana_data.day > days_in_month[szukana_data.month]){
+            szukana_data.day = 1;
+            szukana_data.month += 1;
+            if (szukana_data.month > 12){
+                szukana_data.month = 1;
+                szukana_data.year += 1;
+                if (is_leap(szukana_data.year)){
+                    days_in_month[2] = 29;
+                } else {
+                    days_in_month[2] = 28;
+                }
+            }
+        }
+    }
+
+    float wartosc = 0;
+
+    for (int i = 0; i < n; ++i) {
+        if (food_tab[i].valid_date.day == szukana_data.day && food_tab[i].valid_date.month == szukana_data.month && food_tab[i].valid_date.year == szukana_data.year){
+            wartosc += food_tab[i].amount*food_tab[i].price;
+        }
+    }
+
+    return wartosc;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -193,6 +265,7 @@ void print_person(const Person *p) {
 }
 
 int create_list(Person *person_tab, int n) {
+
 }
 
 int main(void) {

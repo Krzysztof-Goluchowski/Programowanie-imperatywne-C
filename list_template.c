@@ -65,6 +65,14 @@ void dump_list(const List* p_list) {
 
 // Print elements of the list if comparable to data
 void dump_list_if(List *p_list, void *data) {
+    if (p_list->compare_data == NULL) return;
+    for (ListElement *temp = p_list->head; temp != NULL; temp = temp->next) {
+        if (p_list->compare_data(temp->data, data) == 0) {
+            if (p_list->dump_data != NULL) {
+                p_list->dump_data(temp->data);
+            }
+        }
+    }
 }
 
 // Free element pointed by data using free_data() function
@@ -229,6 +237,15 @@ void dump_word (const void *d) {
     printf("%s ", data->word);
 }
 
+void dump_word_lowercase(const void *d){
+    const DataWord *data = (const DataWord*)d;
+    char *str = data->word;
+    for (int i = 0; str[i]; i++) {
+        putchar(tolower(str[i]));
+    }
+    printf(" ");
+}
+
 void free_word(void *d) {
     const DataWord *data = (const DataWord*)d;
     free(data->word);
@@ -236,12 +253,20 @@ void free_word(void *d) {
 }
 
 int cmp_word_alphabet(const void *a, const void *b) {
+    const DataWord *x = (const DataWord*) a;
+    const DataWord *y = (const DataWord*) b;
+    return strcmp(x->word, y->word);
 }
 
 int cmp_word_counter(const void *a, const void *b) {
+    const DataWord *x = (const DataWord*) a;
+    const DataWord *y = (const DataWord*) b;
+    return x->counter - y->counter;
 }
 
 void modify_word(void *p) {
+    DataWord *data = (DataWord*) p;
+    data->counter++;
 }
 
 void *create_data_word(const char *string, int counter) {
@@ -259,6 +284,7 @@ void *create_data_word(const char *string, int counter) {
 void stream_to_list(List *p_list, FILE *stream, CompareDataFp cmp) {
     char buffer[BUFFER_SIZE];
     int cnt = 0;
+    int counter = 0;
     while (1){
         if(fgets(buffer, sizeof(buffer), stdin) == NULL){
             break;
@@ -338,7 +364,7 @@ int main(void) {
 			break;
 		case 3: // read words, insert into list alphabetically, print words encountered n times
 			scanf("%d",&n);
-			//init_list(&list, dump_word_lowercase, free_word, NULL, modify_word);
+			init_list(&list, dump_word_lowercase, free_word, NULL, modify_word);
 			stream_to_list(&list, stdin, cmp_word_alphabet);
 			list.compare_data = cmp_word_counter;
 			DataWord data = { NULL, n };

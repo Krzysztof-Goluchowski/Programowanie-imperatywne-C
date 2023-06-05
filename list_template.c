@@ -257,7 +257,7 @@ void *create_data_word(const char *string, int counter) {
 // (comparator function address). If this address is not NULL the element is
 // inserted according to the comparator. Otherwise, read order is preserved.
 void stream_to_list(List *p_list, FILE *stream, CompareDataFp cmp) {
-    char buffer[100];
+    char buffer[BUFFER_SIZE];
     int cnt = 0;
     while (1){
         if(fgets(buffer, sizeof(buffer), stdin) == NULL){

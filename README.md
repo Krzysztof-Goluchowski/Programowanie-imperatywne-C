@@ -1,1 +1,1 @@
-# Programowanie-imperatywne-C
+# Programowanie imperatywne

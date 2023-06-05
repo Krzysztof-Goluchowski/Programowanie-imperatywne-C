@@ -1,1 +1,1 @@
-# Programowanie imperatywne
+# Programowanie imperatywne :(

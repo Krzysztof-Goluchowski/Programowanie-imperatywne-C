@@ -55,12 +55,11 @@ void dump_list(const List* p_list) {
     if (p_list->head == NULL){
         return;
     }
-    ListElement *first = p_list->head;
-    while (first != p_list->tail){
-        p_list->dump_data(first->data);
-        first = first->next;
+    ListElement *element = p_list->head;
+    while (element != NULL){
+        p_list->dump_data(element->data);
+        element = element->next;
     }
-    p_list->dump_data(p_list->tail->data);
 }
 
 // Print elements of the list if comparable to data
@@ -82,15 +81,14 @@ void free_element(DataFp free_data, ListElement *to_delete) {
 
 // Free all elements of the list
 void free_list(List* p_list) {
-    ListElement *temp = p_list->head;
-    while (temp != NULL) {
-        ListElement *next = temp->next;
-        if (p_list->free_data != NULL) {
-            p_list->free_data(temp->data);
+    ListElement *current = p_list->head;
+    while (current != NULL) {
+        ListElement *todelete = current;
+        current = current->next;
+        if (p_list->free_data != NULL){
+            p_list->free_data(todelete->data);
         }
-        temp->next = NULL;
-        free(temp);
-        temp = next;
+        free(todelete);
     }
     p_list->head = NULL;
     p_list->tail = NULL;
@@ -98,9 +96,9 @@ void free_list(List* p_list) {
 
 // Push element at the beginning of the list
 void push_front(List *p_list, void *data){
-    ListElement *new_element = (ListElement*) malloc(sizeof(ListElement));
+    ListElement *new_element = safe_malloc(sizeof(ListElement));
     new_element->data = data;
-    if (p_list->tail == NULL) {
+    if (p_list->head == NULL) {
         p_list->head = new_element;
         p_list->tail = new_element;
     } else {
@@ -111,7 +109,7 @@ void push_front(List *p_list, void *data){
 
 // Push element at the end of the list
 void push_back(List *p_list, void *data) {
-    ListElement *new_element = (ListElement*) malloc(sizeof(ListElement));
+    ListElement *new_element = safe_malloc(sizeof(ListElement));
     new_element->data = data;
     new_element->next = NULL;
     if (p_list->tail == NULL){
@@ -133,7 +131,7 @@ void pop_front(List *p_list) {
         ListElement *first = p_list->head;
         ListElement *second = first->next;
         p_list->head = second;
-        p_list->free_data(first);
+        free(first);
     }
 }
 
@@ -159,42 +157,51 @@ void reverse(List *p_list) {
 
 // find element in sorted list after which to insert given element
 ListElement* find_insertion_point(const List *p_list, ListElement *p_element) {
+    ListElement* current = p_list->head;
+    ListElement* prev = NULL;
+    while (current != NULL && p_list->compare_data(current->data, p_element->data) < 0) {
+        prev = current;
+        current = current->next;
+    }
+    return prev;
 }
 
-// Insert element after 'previous'
-void push_after(List *p_list, void *data, ListElement *previous) {
-}
 
 // Insert element preserving order
 void insert_in_order(List *p_list, void *p_data) {
-    if (p_list->head == NULL){
-        return;
-    }
-    ListElement *new_element = (ListElement*) malloc(sizeof(ListElement));
-    new_element->data = p_data;
-
-    ListElement *first = p_list->head;
-    ListElement *second = first->next;
-
-    if (p_list->compare_data(p_data, first->data) < 0){
-        new_element->next = first;
-        p_list->head = new_element;
-        return;
-    }
-
-    while (second != NULL){
-        if (p_list->compare_data(p_data, second->data) > 0){
-            first = second;
-            second = second->next;
-        } else if (p_list->compare_data(p_data, second->data) < 0){
-            new_element->next = second;
-            first->next = new_element;
+    ListElement *curr = p_list->head;
+    while (curr != NULL) {
+        if (p_list->compare_data(curr->data, p_data) == 0) {
+            if (p_list->modify_data) {
+                p_list->modify_data(curr->data);
+            }
             return;
         }
+        curr = curr->next;
     }
-    p_list->tail->next = new_element;
-    p_list->tail = new_element;
+
+    ListElement *new_element = safe_malloc(sizeof(ListElement));
+    new_element->data = p_data;
     new_element->next = NULL;
+
+    if (p_list->head == NULL){
+        p_list->head = new_element;
+        p_list->tail = new_element;
+    } else {
+        ListElement *insertion_point = find_insertion_point(p_list, new_element);
+        if (insertion_point == NULL) {
+            new_element->next = p_list->head;
+            p_list->head = new_element;
+        } else {
+            new_element->next = insertion_point->next;
+            insertion_point->next = new_element;
+
+            if (insertion_point == p_list->tail){
+                p_list->tail = new_element;
+            }
+        }
+    }
+
 }
 
 // -----------------------------------------------------------
@@ -203,11 +210,12 @@ void insert_in_order(List *p_list, void *p_data) {
 // int element
 
 void dump_int(const void *d) {
-    const int *data = (const int *)d;
+    const int *data = d;
     printf("%d ", *data);
 }
 
 void free_int(void *d) {
+    if (d == NULL) return;
     free(d);
 }
 
@@ -220,7 +228,7 @@ int cmp_int(const void *a, const void *b) {
 }
 
 int *create_data_int(int v) {
-    int *data = (int*) malloc(sizeof(int));
+    int *data = safe_malloc(sizeof(int));
     *data = v;
     return data;
 }
@@ -243,13 +251,13 @@ void dump_word_lowercase(const void *d){
     for (int i = 0; str[i]; i++) {
         putchar(tolower(str[i]));
     }
-    printf(" ");
+    printf("\n");
 }
 
 void free_word(void *d) {
-    const DataWord *data = (const DataWord*)d;
+    DataWord *data = (DataWord*)d;
     free(data->word);
-    free((void*)data);
+    free(data);
 }
 
 int cmp_word_alphabet(const void *a, const void *b) {
@@ -261,7 +269,7 @@ int cmp_word_alphabet(const void *a, const void *b) {
 int cmp_word_counter(const void *a, const void *b) {
     const DataWord *x = (const DataWord*) a;
     const DataWord *y = (const DataWord*) b;
-    return x->counter - y->counter;
+    return (x->counter - y->counter);
 }
 
 void modify_word(void *p) {
@@ -269,12 +277,19 @@ void modify_word(void *p) {
     data->counter++;
 }
 
+void to_lower(char *str) {
+    for (int i = 0; str[i]; i++) {
+        str[i] = tolower(str[i]);
+    }
+}
+
 void *create_data_word(const char *string, int counter) {
-    DataWord *data = (DataWord*)malloc(sizeof(DataWord));
-    data->word = (char*)malloc(strlen(string) + 1);
-    strcpy(data->word, string);
-    data->counter = counter;
-    return data;
+    char *word = safe_strdup(string);
+    DataWord *dataWord = (DataWord *)safe_malloc(sizeof(DataWord));
+
+    dataWord->word = word;
+    dataWord->counter = counter;
+    return dataWord;
 }
 
 // read text, parse it to words, and insert those words to the list.
@@ -284,33 +299,42 @@ void *create_data_word(const char *string, int counter) {
 void stream_to_list(List *p_list, FILE *stream, CompareDataFp cmp) {
     char buffer[BUFFER_SIZE];
     int cnt = 0;
-    int counter = 0;
-    while (1){
-        if(fgets(buffer, sizeof(buffer), stdin) == NULL){
-            break;
-        }
-        if (buffer[0] == '\n' && cnt != 0) {
-            break;
-        }
-        char *token = strtok(buffer, ".,?!:;- \n");
-        while (token != NULL) {
-            DataWord *new_element = create_data_word(token, cnt);
-            ListElement *new = (ListElement*) malloc(sizeof(ListElement));
-            new->data = new_element;
-            new->next = NULL;
-            if (cnt == 0) {
-                p_list->head = new;
-                p_list->tail = new;
-            } else {
-                p_list->tail->next = new;
-                p_list->tail = new;
+    if (cmp == NULL) {
+        while (1) {
+            if (fgets(buffer, sizeof(buffer), stream) == NULL) {
+                break;
             }
-            cnt++;
-            token = strtok(NULL, ".,?!:;- \n");
+            if (buffer[0] == '\n' && cnt != 0) {
+                break;
+            }
+            char *token = strtok(buffer, ".,?!:;- \n\r\t");
+            while (token != NULL) {
+                DataWord *new_element = create_data_word(token, cnt);
+                push_back(p_list, new_element);
+                cnt++;
+                token = strtok(NULL, ".,?!:;- \n\r\t");
+            }
+        }
+    } else {
+        p_list->compare_data = cmp;
+        while (1) {
+            if (fgets(buffer, sizeof(buffer), stream) == NULL) {
+                break;
+            }
+            if (buffer[0] == '\n' && cnt != 0) {
+                break;
+            }
+            char *token = strtok(buffer, ".,?!:;- \n\r\t");
+            while (token != NULL) {
+                DataWord *new_element = create_data_word(token, 1);
+                to_lower(new_element->word);
+                insert_in_order(p_list, new_element);
+                cnt++;
+                token = strtok(NULL, ".,?!:;- \n\r\t");
+            }
         }
     }
 }
-
 // test integer list
 void list_test(List *p_list, int n) {
 	char op;

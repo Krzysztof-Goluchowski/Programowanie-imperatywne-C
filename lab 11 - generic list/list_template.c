@@ -252,7 +252,7 @@ void dump_word_lowercase(const void *d){
     for (int i = 0; str[i]; i++) {
         putchar(tolower(str[i]));
     }
-    printf("\n");
+    printf(" ");
 }
 
 void free_word(void *d) {

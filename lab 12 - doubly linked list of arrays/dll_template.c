@@ -169,61 +169,7 @@ size_t digits(int n) {
 // inserts 'value' to the node with the same digits' count
 // otherwise insert new node
 void put_in_order(List *list, int value) {
-    size_t length = digits(value);
-
-    Node *curr = list->head;
-
-    while( curr ){
-        if(curr->data) {
-            if (digits(curr->data[0]) == length) {
-                break;
-            }
-        }
-        curr = curr->next;
-    }
-
-    if (curr && digits(curr->data[0]) == length) {
-        size_t index = 0;
-        while (index < curr->array_size && value > curr->data[index]) {
-            index++;
-        }
-
-        curr->data = safe_realloc(curr->data, (curr->array_size + 1) * sizeof(int));
-
-        for (size_t i = curr->array_size; i > index; i--) {
-            curr->data[i] = curr->data[i - 1];
-        }
-
-        curr->data[index] = value;
-        curr->array_size++;
-    } else {
-        int *data = safe_malloc(sizeof(int));
-        data[0] = value;
-
-        Node *what = create_node(data, 1, NULL, NULL);
-        Node *where = list->head;
-        while(where){
-            if(where->data) {
-                if (digits(where->data[0]) >= length) {
-                    break;
-                }
-            }
-            where = where->next;
-        }
-
-        if(where){
-            what->prev = where->prev;
-            where->prev->next = what;
-            what->next = where;
-            where->prev = what;
-        }
-        else{
-            list->tail->prev->next = what;
-            what->prev = list->tail->prev;
-            what->next = list->tail;
-            list->tail->prev = what;
-        }
-    }
+   
 }
 
 // -------------------------------------------------------------

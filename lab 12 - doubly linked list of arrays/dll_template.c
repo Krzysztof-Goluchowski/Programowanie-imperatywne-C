@@ -112,26 +112,83 @@ int get_forward(List *list, size_t n) {
 
 // set iterator to move n elements backward from its current position
 void skip_backward(iterator* itr, size_t n) {
+    size_t size = n;
+    for(;;){
+        if (size > itr->node_ptr->array_size){
+            size = size - itr->node_ptr->array_size;
+            itr->node_ptr = itr->node_ptr->prev;
+        } else {
+            itr->position = itr->node_ptr->array_size - size;
+            break;
+        }
+    }
 }
 
 // backward iteration - get n-th element from the end of the list
 int get_backward(List *list, size_t n) {
+    iterator *itr = safe_malloc(sizeof(iterator));
+    itr->node_ptr = list->tail->prev;
+    itr->position = itr->node_ptr->array_size - 1;
+    skip_backward(itr, n);
+    return itr->node_ptr->data[itr->position];
 }
 
 void remove_node(Node *node_ptr) {
+    node_ptr->prev->next = node_ptr->next;
+    node_ptr->next->prev = node_ptr->prev;
 }
 
 // remove n-th element; if array empty remove node
 void remove_at(List *list, size_t n) {
+    iterator *itr = safe_malloc(sizeof(iterator));
+    itr->node_ptr = list->head->next;
+    itr->position = 0;
+    skip_forward(itr, n);
+    if (itr->node_ptr->array_size == 1){
+        remove_node(itr->node_ptr);
+        return;
+    }
+    memmove(&itr->node_ptr->data[itr->position], &itr->node_ptr->data[itr->position+1], (itr->node_ptr->array_size-1) * sizeof(int));
+    itr->node_ptr->array_size--;
+
 }
 
 // return the number of digits of number n
 size_t digits(int n) {
+    size_t licznik = 1;
+    for(;;){
+        n = n/10;
+        if (n != 0){
+            licznik++;
+        } else {
+            return licznik;
+        }
+    }
 }
 
 // inserts 'value' to the node with the same digits' count
 // otherwise insert new node
 void put_in_order(List *list, int value) {
+    if (list->head->next == NULL){
+        int *nums = safe_malloc(sizeof(int));
+        nums[0] = value;
+        Node *new_element = safe_malloc(sizeof(Node));
+        new_element->data = nums;
+        new_element->array_size = 1;
+        new_element->next = NULL;
+        new_element->prev = NULL;
+        list->head->next = new_element;
+        new_element->prev = list->head;
+        new_element->next = list->tail;
+        list->tail->prev = new_element;
+        return;
+    }
+    for (Node *node = list->head->next; node != list->tail; node = node->next) {
+        if (digits(node->data[0]) == digits(value)){
+
+        }
+    }
+
 }
 
 // -------------------------------------------------------------

@@ -169,26 +169,61 @@ size_t digits(int n) {
 // inserts 'value' to the node with the same digits' count
 // otherwise insert new node
 void put_in_order(List *list, int value) {
-    if (list->head->next == NULL){
-        int *nums = safe_malloc(sizeof(int));
-        nums[0] = value;
-        Node *new_element = safe_malloc(sizeof(Node));
-        new_element->data = nums;
-        new_element->array_size = 1;
-        new_element->next = NULL;
-        new_element->prev = NULL;
-        list->head->next = new_element;
-        new_element->prev = list->head;
-        new_element->next = list->tail;
-        list->tail->prev = new_element;
-        return;
-    }
-    for (Node *node = list->head->next; node != list->tail; node = node->next) {
-        if (digits(node->data[0]) == digits(value)){
+    size_t length = digits(value);
 
+    Node *curr = list->head;
+
+    while( curr ){
+        if(curr->data) {
+            if (digits(curr->data[0]) == length) {
+                break;
+            }
+        }
+        curr = curr->next;
+    }
+
+    if (curr && digits(curr->data[0]) == length) {
+        size_t index = 0;
+        while (index < curr->array_size && value > curr->data[index]) {
+            index++;
+        }
+
+        curr->data = safe_realloc(curr->data, (curr->array_size + 1) * sizeof(int));
+
+        for (size_t i = curr->array_size; i > index; i--) {
+            curr->data[i] = curr->data[i - 1];
+        }
+
+        curr->data[index] = value;
+        curr->array_size++;
+    } else {
+        int *data = safe_malloc(sizeof(int));
+        data[0] = value;
+
+        Node *what = create_node(data, 1, NULL, NULL);
+        Node *where = list->head;
+        while(where){
+            if(where->data) {
+                if (digits(where->data[0]) >= length) {
+                    break;
+                }
+            }
+            where = where->next;
+        }
+
+        if(where){
+            what->prev = where->prev;
+            where->prev->next = what;
+            what->next = where;
+            where->prev = what;
+        }
+        else{
+            list->tail->prev->next = what;
+            what->prev = list->tail->prev;
+            what->next = list->tail;
+            list->tail->prev = what;
         }
     }
-
 }
 
 // -------------------------------------------------------------

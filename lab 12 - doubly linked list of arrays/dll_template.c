@@ -148,7 +148,7 @@ void remove_at(List *list, size_t n) {
         remove_node(itr->node_ptr);
         return;
     }
-    memmove(&itr->node_ptr->data[itr->position], &itr->node_ptr->data[itr->position+1], (itr->node_ptr->array_size-1) * sizeof(int));
+    memmove(&itr->node_ptr->data[itr->position], &itr->node_ptr->data[itr->position+1], (itr->node_ptr->array_size - itr->position - 1) * sizeof(int));
     itr->node_ptr->array_size--;
 
 }
